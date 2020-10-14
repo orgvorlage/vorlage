@@ -1,0 +1,19 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+if [ "$#" -ne 1 ]; then
+	echo "Script requires an argument for the new version number."
+	exit 1
+fi
+VERSION=$1
+LAST_TAG=$(git describe --abbrev=0)
+echo "" | cat - changelog.md > temp && mv temp changelog.md
+echo "" | cat - changelog.md > temp && mv temp changelog.md
+git log $LAST_TAG...develop
+--pretty=format:'-[\[%h\]](https://gitlab.version.fz-juelich.deorg/vorlage/vorlage/commit/%H)  %s' --reverse  | cat - changelog.md > temp && mv temp changelog.md
+echo "" | cat - changelog.md > temp && mv temp changelog.md
+echo $(date -u +"%Y-%m-%d %T UTC") | cat - changelog.md > temp && mv temp changelog.md
+echo "" | cat - changelog.md > temp && mv temp changelog.md
+echo "# $VERSION" | cat - changelog.md > temp && mv temp changelog.md

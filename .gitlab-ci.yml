@@ -1,0 +1,457 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+stages:
+  - Screening
+  - Test
+  - Deployment
+
+variables:
+# User Specific Setting
+  WORKING_DIRECTORY: /tmp/project
+# Automatic Variables : URLs
+  DOCKER_USER: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/docker
+  INPUT_DATA_REPO: $CI_SERVER_URL/$CI_PROJECT_NAMESPACE/input_data.git
+  PIPELINE_API_LINK: $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs
+
+# Automatic Variables : System
+  INPUT_DATA: $WORKING_DIRECTORY/input_data
+
+################################################################################
+# Setup
+################################################################################
+.setup:
+  artifacts:
+    paths:
+      - artifact
+  before_script:
+    - mkdir -p artifact
+    - mkdir -p $WORKING_DIRECTORY
+    - git clone $INPUT_DATA_REPO $INPUT_DATA
+
+################################################################################
+# Diagnostic (Generic)
+################################################################################
+.diagnostic.generic:
+  extends: .setup
+  tags: ["docker"]
+  image: $DOCKER_USER/diagnostic:generic
+  variables:
+    COMPILER_NAME: "clang"
+    COMPILER_RELEASE: "10"
+    COMPILER_PREFIX: /opt/cupstack/clang/10
+    TOOLCHAIN_PREFIX: /opt/depstack/clang/10
+    RUNTIME_ENVIRONMENT: /opt/cupstack/clang/10/share/runtime/source.bash
+    TOOLCHAIN_FILE: /opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake
+    CLANG_FORMAT: /opt/cupstack/clang/10/bin/clang-format
+    CLANG_TIDY: /opt/cupstack/clang/10/bin/clang-tidy
+    GIT_CLANG_FORMAT: /opt/cupstack/clang/10/bin/git-clang-format
+    RUN_CLANG_TIDY_PY: /opt/cupstack/clang/10/bin/clang-tidy
+
+################################################################################
+# Screening
+################################################################################
+.format:
+  extends: .diagnostic.generic
+  script:
+    - ci/bin/format $GIT_CLANG_FORMAT $CLANG_FORMAT
+
+################################################################################
+# Linting
+################################################################################
+.clang_tidy:
+  extends: .diagnostic.generic
+  script:
+    - |
+      ci/bin/clang_tidy \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $RUN_CLANG_TIDY_PY \
+        $CLANG_TIDY \
+        $CXX_STANDARD \
+        $PWD \
+        $WORKING_DIRECTORY \
+        $INPUT_DATA
+
+###############################################################################
+# Sanitizer
+###############################################################################
+.sanitizer:
+  extends: .diagnostic.generic
+  script:
+    - |
+      ci/bin/sanitizer \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $SANITIZER \
+        $CXX_STANDARD \
+        $PWD \
+        $WORKING_DIRECTORY \
+        $INPUT_DATA
+
+###############################################################################
+# System
+###############################################################################
+.system:
+  extends: .setup
+  script:
+    - |
+      ci/bin/system \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        $PWD \
+        $WORKING_DIRECTORY \
+        $INPUT_DATA
+    - |
+      if [[ $COVERAGE == "On" ]]; then
+        ci/bin/compute.coverage \
+          -i $WORKING_DIRECTORY/artifact/coverage/unit.t.all/unit.t.all.json \
+          -o $WORKING_DIRECTORY/artifact/coverage/unit.t.all/unit.t.all.log
+        mkdir -p artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+        rsync -aAX \
+          $WORKING_DIRECTORY/artifact/ \
+          artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+      fi
+
+###############################################################################
+# Compiler
+###############################################################################
+.compiler:
+  extends: .setup
+  script:
+    - |
+      ci/bin/compiler \
+        $TOOLCHAIN_FILE \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        $PWD \
+        $WORKING_DIRECTORY \
+        $INPUT_DATA
+    - |
+      if [[ $COVERAGE == "On" ]]; then
+        ci/bin/compute.coverage \
+          -i $WORKING_DIRECTORY/artifact/coverage/unit.t.all/unit.t.all.json \
+          -o $WORKING_DIRECTORY/artifact/coverage/unit.t.all/unit.t.all.log
+        mkdir -p artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+        rsync -aAX \
+          $WORKING_DIRECTORY/artifact/ \
+          artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+      fi
+
+###############################################################################
+# Doxygen
+###############################################################################
+.doxygen:
+  extends: .diagnostic.generic
+  script:
+    - |
+      ci/bin/doxygen \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $PWD \
+        $WORKING_DIRECTORY \
+        $INPUT_DATA
+    - |
+      rsync -aAX \
+        $WORKING_DIRECTORY/artifact/doxygen/ \
+        artifact/doxygen/
+
+###############################################################################
+# Reporter
+###############################################################################
+.deployment:
+  tags: ["docker"]
+  when: always
+  image: $DOCKER_USER/deployment:generic
+  script:
+    - |
+      ci/bin/setup.ssh \
+        $REPORTER_HOST_ADDRESS \
+        $REPORTER_HOST_PORT \
+        $REPORTER_HOST_USERNAME \
+        $KEY_PASSWORD \
+        $KEY_SALT
+    - |
+      ci/bin/report.generate.from.gitlab.ci \
+        $READ_API_TOKEN \
+        $PIPELINE_API_LINK
+    - |
+      ci/bin/report.deploy \
+        $REPORTER_REPO \
+        $CI_COMMIT_REF_NAME
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+# Job List
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+################################################################################
+# Screening
+################################################################################
+"Format Check":
+  stage: Screening
+  extends: .format
+
+################################################################################
+# Test
+################################################################################
+"ArchLinux (C++17, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .system
+  stage: Test
+  image: $DOCKER_USER/archlinux:latest
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+"ArchLinux (C++17, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .system
+  stage: Test
+  image: $DOCKER_USER/archlinux:latest
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Centos 8 (C++17, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .system
+  stage: Test
+  image: $DOCKER_USER/centos:8
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+"Centos 8 (C++17, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .system
+  stage: Test
+  image: $DOCKER_USER/centos:8
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Ubuntu 20.04 (C++17, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .system
+  stage: Test
+  image: $DOCKER_USER/ubuntu:20.04
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+"Ubuntu 20.04 (C++17, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .system
+  stage: Test
+  image: $DOCKER_USER/ubuntu:20.04
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+################################################################################
+# Compiler
+################################################################################
+
+"Clang 10 on Linux (C++17, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:10
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "20"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 10 on Linux (C++17, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:10
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "20"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Clang 10 on Linux (C++ 20, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:10
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "20"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 10 on Linux (C++ 20, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:10
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "20"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Clang 9 on Linux (C++17, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:9
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 9 on Linux (C++17, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:9
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Clang 9 on Linux (C++ 20, Debug)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:9
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 9 on Linux (C++ 20, Release)":
+  tags: ["docker"]
+  needs: ["Format Check"]
+  extends: .compiler
+  stage: Test
+  image: $DOCKER_USER/clang:9
+  variables:
+    TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+################################################################################
+# Analysis (C++17)
+################################################################################
+"Clang Tidy (C++17)":
+  needs: ["Format Check"]
+  extends: .clang_tidy
+  stage: Test
+  variables:
+    CXX_STANDARD: "17"
+
+"Address Sanitizer (C++17)":
+  needs: ["Format Check"]
+  extends: .sanitizer
+  stage: Test
+  variables:
+    SANITIZER: "Address"
+    CXX_STANDARD: "17"
+
+"Undefined Behavior Sanitizier (C++17)":
+  needs: ["Format Check"]
+  extends: .sanitizer
+  stage: Test
+  variables:
+    SANITIZER: "Undefined"
+    CXX_STANDARD: "17"
+
+"Leak Sanitizer (C++ 17)":
+  needs: ["Format Check"]
+  extends: .sanitizer
+  stage: Test
+  variables:
+    SANITIZER: "Leak"
+    CXX_STANDARD: "17"
+
+################################################################################
+# Analysis (C++20)
+################################################################################
+"Clang Tidy (C++20)":
+  needs: ["Format Check"]
+  extends: .clang_tidy
+  stage: Test
+  variables:
+    CXX_STANDARD: "20"
+
+"Address Sanitizer (C++20)":
+  needs: ["Format Check"]
+  extends: .sanitizer
+  stage: Test
+  variables:
+    SANITIZER: "Address"
+    CXX_STANDARD: "20"
+
+"Undefined Behavior Sanitizier (C++20)":
+  needs: ["Format Check"]
+  extends: .sanitizer
+  stage: Test
+  variables:
+    SANITIZER: "Undefined"
+    CXX_STANDARD: "20"
+
+"Leak Sanitizer (C++ 20)":
+  needs: ["Format Check"]
+  extends: .sanitizer
+  stage: Test
+  variables:
+    SANITIZER: "Leak"
+    CXX_STANDARD: "20"
+
+################################################################################
+# Documentation
+################################################################################
+"Doxygen":
+  needs: ["Format Check"]
+  extends: .doxygen
+  stage: Test
+
+################################################################################
+# Reporter
+################################################################################
+"CI Reporter":
+  stage: Deployment
+  when: always
+  only:
+    variables:
+      - $CI_COMMIT_REF_PROTECTED == "true"
+  extends: .deployment

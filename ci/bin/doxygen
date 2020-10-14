@@ -1,0 +1,54 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+if [ "$#" -ne 5 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires following arguments."
+  echo "1. Runtime Environment"
+  echo "2. Toolchain File"
+  echo "3. Source Directory"
+  echo "4. Working Directory"
+  echo "5. Input Data"
+  exit 1
+fi
+
+RUNTIME_ENVIRONMENT=$1
+TOOLCHAIN_FILE=$2
+SOURCE_DIRECTORY=$3
+WORKING_DIRECTORY=$4
+INPUT_DATA=$5
+
+BUILD_TYPE=Debug
+CXX_STANDARD=20
+BUILD_DIRECTORY=$WORKING_DIRECTORY/build
+OUTPUT_DATA=$WORKING_DIRECTORY/output_data
+LOG_DIRECTORY=$WORKING_DIRECTORY/log
+ARTIFACT_DIRECTORY=$WORKING_DIRECTORY/artifact
+
+mkdir -p $BUILD_DIRECTORY
+mkdir -p $OUTPUT_DATA
+mkdir -p $LOG_DIRECTORY
+mkdir -p $ARTIFACT_DIRECTORY
+
+source $RUNTIME_ENVIRONMENT
+pushd $BUILD_DIRECTORY
+  cmake \
+    -G Ninja \
+    -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE \
+    -DTOOLCHAIN_CXX_STANDARD=$CXX_STANDARD \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DTOOLCHAIN_ENABLE_WARNINGS=On \
+    -DTOOLCHAIN_ENABLE_WERROR=On \
+    -DENABLE_DOXYGEN=On \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+    -DINPUT_DATA=$INPUT_DATA \
+    -DOUTPUT_DATA=$OUTPUT_DATA \
+    -DBUILD_TESTING=On \
+    -B$BUILD_DIRECTORY -S$SOURCE_DIRECTORY
+  cmake --build $BUILD_DIRECTORY --parallel 1
+  ninja vanadium_doxygen
+  cp -r vanadium/doxygen/ $ARTIFACT_DIRECTORY/doxygen
+popd

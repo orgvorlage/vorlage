@@ -1,0 +1,58 @@
+//------------------------------------------------------------------------------
+// SPDX-License-Identifier: "Apache-2.0 OR MIT"
+// Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+//------------------------------------------------------------------------------
+#ifndef PAKET_META_INFO_HPP
+#define PAKET_META_INFO_HPP
+
+#include <paket/meta/version.hpp>
+#include <string_view>
+
+namespace paket {
+class meta {
+public:
+  [[nodiscard]] constexpr auto name() const noexcept -> std::string_view
+  {
+    return name_;
+  }
+
+  [[nodiscard]] constexpr auto version() const noexcept -> version
+  {
+    return version_;
+  }
+
+  [[nodiscard]] constexpr auto homepage() const noexcept -> std::string_view
+  {
+    return homepage_url_;
+  }
+
+  [[nodiscard]] constexpr auto description() const noexcept -> std::string_view
+  {
+    return description_;
+  }
+
+  [[nodiscard]] constexpr auto bug_tracker() const noexcept -> std::string_view
+  {
+    return bug_tracker_;
+  }
+
+  [[nodiscard]] constexpr auto repository() const noexcept -> std::string_view
+  {
+    return repository_;
+  }
+
+
+private:
+  // clang-format off
+  std::string_view name_{"@PROJECT_NAME@"};
+  std::string_view homepage_url_{"@PROJECT_HOMEPAGE_URL@"};
+  std::string_view description_{"@PROJECT_DESCRIPTION@"};
+  std::string_view repository_{"@PROJECT_REPOSITORY_URL@"};
+  std::string_view bug_tracker_{"@PROJECT_REPOSITORY_URL@/issues"};
+  version version_{};
+
+  // clang-format on
+};
+} // namespace paket
+
+#endif // PAKET_META_INFO_HPP

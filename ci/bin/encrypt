@@ -1,0 +1,27 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+if [ "$#" -ne 4 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires"
+  echo "1. Unencrypted File"
+  echo "2. Encrypted File"
+  echo "3. Passphrase"
+  echo "4. Salt"
+  exit 1
+fi
+
+INFILE=$1
+OUTFILE=$2
+PASSPHRASE=$3
+SALT=$4
+
+openssl enc \
+  -aes-256-cbc -pbkdf2 -iter 20000 \
+  -in $INFILE \
+  -out $OUTFILE \
+  -k $PASSPHRASE\
+  -S $SALT

@@ -1,0 +1,38 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+
+if [ "$#" -ne 2 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires: "
+  echo "1. Reporter Repository"
+  echo "2. CI Commit Ref Name"
+  exit 1
+fi
+
+REPORTER_REPO=$1
+CI_COMMIT_REF_NAME=$2
+
+SOURCE_DIRECTORY=$PWD
+REPO_DIR=/tmp/report_repository
+
+git clone $REPORTER_REPO $REPO_DIR
+mkdir -p $REPO_DIR/static/ci/report/$CI_COMMIT_REF_NAME
+pushd $REPO_DIR/static/ci/report/$CI_COMMIT_REF_NAME
+rsync -aAX --delete $SOURCE_DIRECTORY/artifact/ ./
+git add .
+echo "$(date +%s)" > updated.raw
+popd
+
+pushd $REPO_DIR
+git config user.email "reporter@gitlab.version.fz-juelich.de"
+git config user.name "Reporter"
+git commit -m "+ report for $CI_COMMIT_REF_NAME at $(date)"
+git rebase origin/main
+git push
+popd
+
+

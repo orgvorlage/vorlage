@@ -1,0 +1,35 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+set -euo pipefail
+if [ "$#" -ne 5 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires :"
+  echo "1. Reporter Host Address"
+  echo "2. Reporter Host Port"
+  echo "3. Reporter Host Username"
+  echo "4. Key Password"
+  echo "5. Key Salt"
+  exit 1
+fi
+
+#######################
+# Setting up SSH Keys
+#######################
+mkdir $HOME/.ssh
+ssh-keyscan -H -p $REPORTER_HOST_PORT $REPORTER_HOST_ADDRESS > $HOME/.ssh/known_hosts
+ci/bin/decrypt \
+  ci/share/ssh/reporter.enc \
+  $HOME/.ssh/reporter \
+  $KEY_PASSWORD \
+  $KEY_SALT
+chmod 600 $HOME/.ssh/reporter
+ci/bin/setup.ssh.config \
+  reporter \
+  $REPORTER_HOST_ADDRESS \
+  $REPORTER_HOST_PORT \
+  $REPORTER_HOST_USERNAME \
+  $HOME/.ssh

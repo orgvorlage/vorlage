@@ -1,0 +1,396 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+language: shell
+os: linux
+cache: ccache
+dist: bionic
+services:
+  - docker
+
+################################################################################
+################################################################################
+# Base Configuration
+################################################################################
+################################################################################
+env:
+  global:
+    # Manually Set Global Variables
+    - PROJECT_NAME: "vorlage"
+    - INPUT_DATA_REPO: "https://github.com/orgvorlage/input_data.git"
+    - DOCKER_USER: "orgvorlage"
+    # Automatic Global Variables
+    - WORKING_DIRECTORY: "/tmp/working"
+    - INPUT_DATA: "/tmp/input_data"
+
+################################################################################
+################################################################################
+# Job List
+################################################################################
+################################################################################
+stages:
+  - Screening
+  - Test
+  - Documentation
+  - Deployment
+
+jobs:
+  include:
+  ##############################################################################
+  # Screening
+  ##############################################################################
+    - name: "Format"
+      stage: "Screening"
+      env:
+        JOB_TYPE: "Format"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        CLANG_FORMAT: /opt/cupstack/clang/10/bin/clang-format
+        GIT_CLANG_FORMAT: /opt/cupstack/clang/10/bin/git-clang-format
+
+  ##############################################################################
+  # System
+  ##############################################################################
+    - name: "Archlinux (C++17, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "System"
+        DOCKER_IMAGE: ${DOCKER_USER}/archlinux:latest
+        CXX_STANDARD: 17
+        BUILD_TYPE: Debug
+        COVERAGE: "Off"
+
+    - name: "Archlinux (C++17, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "System"
+        DOCKER_IMAGE: ${DOCKER_USER}/archlinux:latest
+        CXX_STANDARD: 17
+        BUILD_TYPE: Release
+        COVERAGE: "Off"
+
+    - name: "Centos 8 (C++17, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "System"
+        DOCKER_IMAGE: ${DOCKER_USER}/centos:8
+        CXX_STANDARD: 17
+        BUILD_TYPE: Debug
+        COVERAGE: "Off"
+
+    - name: "Centos 8 (C++17, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "System"
+        DOCKER_IMAGE: ${DOCKER_USER}/centos:8
+        CXX_STANDARD: 17
+        BUILD_TYPE: Release
+        COVERAGE: "Off"
+
+    - name: "Ubuntu 20.04 (C++17, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "System"
+        DOCKER_IMAGE: ${DOCKER_USER}/ubuntu:20.04
+        CXX_STANDARD: 17
+        BUILD_TYPE: Debug
+        COVERAGE: "Off"
+
+    - name: "Ubuntu 20.04 (C++17, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "System"
+        DOCKER_IMAGE: ${DOCKER_USER}/ubuntu:20.04
+        CXX_STANDARD: 17
+        BUILD_TYPE: Release
+        COVERAGE: "Off"
+
+  ##############################################################################
+  # Compiler
+  ##############################################################################
+    - name: "Clang 10 on Linux (C++17, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:10
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        BUILD_TYPE: "Debug"
+        COVERAGE: "On"
+
+    - name: "Clang 10 on Linux (C++17, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:10
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        BUILD_TYPE: "Release"
+        COVERAGE: "Off"
+
+    - name: "Clang 10 on Linux (C++20, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:10
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        BUILD_TYPE: "Debug"
+        COVERAGE: "On"
+
+    - name: "Clang 10 on Linux (C++20, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:10
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        BUILD_TYPE: "Release"
+        COVERAGE: "Off"
+
+    - name: "Clang 9 on Linux (C++17, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:9
+        TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        BUILD_TYPE: "Debug"
+        COVERAGE: "On"
+
+    - name: "Clang 9 on Linux (C++17, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:9
+        TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        BUILD_TYPE: "Release"
+        COVERAGE: "Off"
+
+    - name: "Clang 9 on Linux (C++20, Debug)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:9
+        TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        BUILD_TYPE: "Debug"
+        COVERAGE: "On"
+
+    - name: "Clang 9 on Linux (C++20, Release)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Compiler"
+        DOCKER_IMAGE: ${DOCKER_USER}/clang:9
+        TOOLCHAIN_FILE: "/opt/depstack/clang/9/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        BUILD_TYPE: "Release"
+        COVERAGE: "Off"
+
+
+  ##############################################################################
+  # Analysis (C++ 17)
+  ##############################################################################
+    - name: "Clang Tidy (C++17)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "ClangTidy"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        RUN_CLANG_TIDY_PY: "/opt/cupstack/clang/10/bin/clang-tidy"
+        CLANG_TIDY: "/opt/cupstack/clang/10/bin/clang-tidy"
+        CXX_STANDARD: "17"
+
+    - name: "Address Sanitizer (C++17)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Sanitizer"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        SANITIZER: "Address"
+
+    - name: "Leak Sanitizer (C++17)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Sanitizer"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        SANITIZER: "Leak"
+
+    - name: "Undefined Sanitizer (C++17)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Sanitizer"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "17"
+        SANITIZER: "Undefined"
+
+  ##############################################################################
+  # Analysis (C++ 20)
+  ##############################################################################
+    - name: "Clang Tidy (C++20)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "ClangTidy"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        RUN_CLANG_TIDY_PY: "/opt/cupstack/clang/10/bin/clang-tidy"
+        CLANG_TIDY: "/opt/cupstack/clang/10/bin/clang-tidy"
+        CXX_STANDARD: "20"
+
+    - name: "Address Sanitizer (C++20)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Sanitizer"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        SANITIZER: "Address"
+
+    - name: "Leak Sanitizer (C++20)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Sanitizer"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        SANITIZER: "Leak"
+
+    - name: "Undefined Sanitizer (C++20)"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Sanitizer"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+        CXX_STANDARD: "20"
+        SANITIZER: "Undefined"
+
+  ##############################################################################
+  # Doxygen
+  ##############################################################################
+    - name: "Doxygen"
+      stage: "Test"
+      env:
+        JOB_TYPE: "Doxygen"
+        DOCKER_IMAGE: ${DOCKER_USER}/diagnostic:generic
+        RUNTIME_ENVIRONMENT: "/opt/cupstack/clang/10/share/runtime/source.bash"
+        TOOLCHAIN_FILE: "/opt/depstack/clang/10/share/toolchain/cmake/toolchain.cmake"
+
+################################################################################
+# Script
+################################################################################
+
+before_script:
+  - mkdir -p artifact
+  - mkdir -p $WORKING_DIRECTORY
+  - git clone $INPUT_DATA_REPO $INPUT_DATA
+
+script:
+  - set -e
+  - source ci/share/docker/helper.sh
+  - mkdir -p $INPUT_DATA
+  - mkdir -p $WORKING_DIRECTORY
+  - docker_generate_name $PROJECT_NAME
+  - |
+    docker_create_container \
+      $DOCKER_IMAGE \
+      $CONTAINER_NAME \
+      $PWD \
+      $WORKING_DIRECTORY \
+      $INPUT_DATA
+  - |
+    if [[ "${JOB_TYPE}" == "Format" ]]; then
+      docker_execute_script \
+         $CONTAINER_NAME \
+         ci/bin/format \
+         $GIT_CLANG_FORMAT \
+         $CLANG_FORMAT
+    fi
+  - |
+    if [[ "${JOB_TYPE}" == "System" ]]; then
+      docker_execute_script \
+        $CONTAINER_NAME \
+        ci/bin/system \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        /tmp/src \
+        /tmp/working \
+        /tmp/input_data
+    fi
+  - |
+    if [[ "${JOB_TYPE}" == "Compiler" ]]; then
+      docker_execute_script \
+        $CONTAINER_NAME \
+        ci/bin/compiler \
+        $TOOLCHAIN_FILE \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        /tmp/src \
+        /tmp/working \
+        /tmp/input_data
+    fi
+  - |
+    if [[ "${JOB_TYPE}" == "ClangTidy" ]]; then
+      docker_execute_script \
+        $CONTAINER_NAME \
+        ci/bin/clang_tidy \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $RUN_CLANG_TIDY_PY \
+        $CLANG_TIDY \
+        $CXX_STANDARD \
+        /tmp/src \
+        /tmp/working \
+        /tmp/input_data
+    fi
+  - |
+    if [[ "${JOB_TYPE}" == "Sanitizer" ]]; then
+      docker_execute_script \
+        $CONTAINER_NAME \
+        ci/bin/sanitizer \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $SANITIZER \
+        $CXX_STANDARD \
+        /tmp/src \
+        /tmp/working \
+        /tmp/input_data
+    fi
+  - |
+    if [[ "${JOB_TYPE}" == "Doxygen" ]]; then
+      docker_execute_script \
+        $CONTAINER_NAME \
+        ci/bin/doxygen \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        /tmp/src \
+        /tmp/working \
+        /tmp/input_data
+      rsync -aAX $WORKING_DIRECTORY/artifact/ artifact/
+    fi
+  - |
+    if [[ $COVERAGE == "On" ]]; then
+      docker_execute_script \
+        $CONTAINER_NAME \
+        ci/bin/compute.coverage \
+        -i /tmp/working/artifact/coverage/unit.t.all/unit.t.all.json \
+        -o /tmp/working/artifact/coverage/unit.t.all/unit.t.all.log
+      rsync -aAX $WORKING_DIRECTORY/artifact/ artifact/
+    fi
+  - docker_cleanup_container $CONTAINER_NAME
+
+

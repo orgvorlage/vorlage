@@ -1,0 +1,25 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -e
+
+# Check if there are three arguments provided
+if [ "$#" -ne 3 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires: "
+  echo "1. name small case"
+  echo "2. name capital case"
+  echo "3. org name small case"
+  exit 1
+fi
+# Example Usage
+#./setup.sh vorlage VORLAGE orgvorlage
+
+
+find . -type d -name ".git" -prune -o -type f -exec sed -i "s/orgvorlage/$3/g" {} \;
+find . -type d -name ".git" -prune -o -type d -name *vorlage*  -print | sed -e "p;s/vorlage/$1/" | xargs -n2 mv
+find . -type d -name ".git" -prune -o -type f -name *vorlage*  -print | sed -e "p;s/vorlage/$1/" | xargs -n2 mv
+find . -type d -name ".git" -prune -o -type f -exec sed -i "s/vorlage/$1/g" {} \;
+find . -type d -name ".git" -prune -o -type f -exec sed -i "s/VORLAGE/$2/g" {} \;
