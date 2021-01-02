@@ -1,0 +1,13 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+.shell:
+  extends: .input_data
+  tags: ["shell"]
+  only:
+    variables:
+      - $VORLAGE_CI_HAS_SHELL_RUNNER == "true"
+  artifacts:
+    paths:
+      - artifact

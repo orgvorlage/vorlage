@@ -1,0 +1,60 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+if [ "$#" -ne 5 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires: "
+  echo "1. C++ Standard "
+  echo "2. Build Type"
+  echo "3. Coverage"
+  echo "4. Source Directory"
+  echo "5. Working Directory"
+  exit 1
+fi
+
+CXX_STANDARD=$1
+BUILD_TYPE=$2
+COVERAGE=$3
+SOURCE_DIRECTORY=$4
+WORKING_DIRECTORY=$5
+
+BUILD_DIRECTORY=$WORKING_DIRECTORY/build
+OUTPUT_DATA=$WORKING_DIRECTORY/output_data
+LOG_DIRECTORY=$WORKING_DIRECTORY/log
+ARTIFACT_DIRECTORY=$WORKING_DIRECTORY/artifact
+
+source  dev/etc/meta.sh
+if [[ $INPUT_DATA_TYPE == EXTERNAL ]]; then
+  INPUT_DATA=$WORKING_DIRECTORY/input_data
+else
+  INPUT_DATA=$SOURCE_DIRECTORY/test/share/data/
+fi
+
+mkdir -p $BUILD_DIRECTORY
+mkdir -p $OUTPUT_DATA
+mkdir -p $LOG_DIRECTORY
+mkdir -p $ARTIFACT_DIRECTORY
+
+pushd $BUILD_DIRECTORY
+  cmake \
+    -G Ninja \
+    -DCMAKE_CXX_STANDARD=$CXX_STANDARD \
+    -DCMAKE_CXX_STANDARD_REQUIRED=On \
+    -DCMAKE_CXX_EXTENSIONS=Off \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DINPUT_DATA=$INPUT_DATA \
+    -DOUTPUT_DATA=$OUTPUT_DATA \
+    -DBUILD_TESTING=On \
+    -DENABLE_COVERAGE=$COVERAGE \
+    -B$BUILD_DIRECTORY -S$SOURCE_DIRECTORY
+  cmake --build $BUILD_DIRECTORY --parallel 1
+  ctest --output-on-failure -L UnitTest
+
+  if [[ $COVERAGE == On ]]; then
+    ninja scandium_coverage
+    cp -r scandium/coverage $ARTIFACT_DIRECTORY/coverage
+  fi
+popd

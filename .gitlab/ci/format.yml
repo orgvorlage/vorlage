@@ -1,0 +1,15 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+.format:
+  extends: .container
+  stage: Prelim
+  image: $DOCKER_USER/diagnostic:17
+  variables:
+  script:
+    - COMPILER_PREFIX=/opt/cupstack/$DIAGNOSTIC_COMPILER_NAME/$DIAGNOSTIC_COMPILER_VERSION
+    - CLANG_FORMAT=$COMPILER_PREFIX/bin/clang-format
+    - GIT_CLANG_FORMAT=$COMPILER_PREFIX/bin/git-clang-format
+    - ci/bin/format $GIT_CLANG_FORMAT $CLANG_FORMAT

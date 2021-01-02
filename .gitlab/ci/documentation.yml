@@ -1,0 +1,26 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+.doxygen:
+  stage: Test
+  extends: .container
+  variables:
+    CXX_STANDARD: 17
+  image: $DOCKER_USER/diagnostic:$CXX_STANDARD
+  script:
+    - COMPILER_PREFIX=/opt/cupstack/$DIAGNOSTIC_COMPILER_NAME/$DIAGNOSTIC_COMPILER_VERSION
+    - TOOLCHAIN_PREFIX=/opt/depstack/
+    - TOOLCHAIN_FILE=$TOOLCHAIN_PREFIX/share/piloted/toolchain/toolchain.cmake
+    - RUNTIME_ENVIRONMENT=$COMPILER_PREFIX/share/cupstack/runtime.bash
+    - |
+      ci/bin/documentation \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $PWD \
+        $WORKING_DIRECTORY
+    - |
+      rsync -aAX \
+        $WORKING_DIRECTORY/artifact/documentation/ \
+        artifact/documentation/

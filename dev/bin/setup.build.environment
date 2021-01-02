@@ -1,0 +1,29 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+if [ "$#" -ne 2 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires: "
+  echo "1. Docker Image"
+  echo "2. Test Input"
+  exit 1
+fi
+
+DOCKER_IMAGE=$1
+TEST_INPUT=$(realpath $2)
+NAME=$(head -c 1024 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 32)
+CONTAINER=vorlage-ci-$NAME
+
+docker run \
+  --net=host -it \
+  --cap-add SYS_PTRACE \
+  --mount source=$TEST_INPUT,destination=/tmp/input,type=bind,readonly \
+  --mount source=$PWD,destination=/tmp/src,type=bind,readonly \
+  --name ${CONTAINER} \
+  ${DOCKER_IMAGE} \
+  bash
+
+

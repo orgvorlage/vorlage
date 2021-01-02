@@ -1,0 +1,9 @@
+*
+-android-*
+-fuchsia-*
+-bugprone-exception-escape
+-cppcoreguidelines-pro-type-vararg
+-hicpp-vararg
+-llvmlibc-*
+-modernize-use-nodiscard
+-readability-redundant-access-specifiers

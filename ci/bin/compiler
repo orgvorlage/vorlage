@@ -1,0 +1,64 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+
+if [ "$#" -ne 6 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires: "
+  echo "1. Toolchain File"
+  echo "2. C++ Standard"
+  echo "3. Build Type"
+  echo "4. Coverage"
+  echo "5. Source Directory"
+  echo "6. Working Directory"
+  exit 1
+fi
+
+TOOLCHAIN_FILE=$1
+CXX_STANDARD=$2
+BUILD_TYPE=$3
+COVERAGE=$4
+SOURCE_DIRECTORY=$5
+WORKING_DIRECTORY=$6
+
+BUILD_DIRECTORY=$WORKING_DIRECTORY/build
+OUTPUT_DATA=$WORKING_DIRECTORY/output_data
+LOG_DIRECTORY=$WORKING_DIRECTORY/log
+ARTIFACT_DIRECTORY=$WORKING_DIRECTORY/artifact
+
+mkdir -p $BUILD_DIRECTORY
+mkdir -p $OUTPUT_DATA
+mkdir -p $LOG_DIRECTORY
+mkdir -p $ARTIFACT_DIRECTORY
+
+source  dev/etc/meta.sh
+if [[ $INPUT_DATA_TYPE == EXTERNAL ]]; then
+  INPUT_DATA=$WORKING_DIRECTORY/input_data
+else
+  INPUT_DATA=$SOURCE_DIRECTORY/test/share/data/
+fi
+
+pushd $BUILD_DIRECTORY
+  cmake \
+    -G Ninja \
+    -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE \
+    -DTOOLCHAIN_CXX_STANDARD=$CXX_STANDARD \
+    -DTOOLCHAIN_ENABLE_WARNINGS=On \
+    -DTOOLCHAIN_ENABLE_WERROR=On \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DINPUT_DATA=$INPUT_DATA \
+    -DOUTPUT_DATA=$OUTPUT_DATA \
+    -DBUILD_TESTING=On \
+    -DENABLE_COVERAGE=$COVERAGE \
+    -B$BUILD_DIRECTORY -S$SOURCE_DIRECTORY
+  cmake --build $BUILD_DIRECTORY --parallel 1
+  ctest --output-on-failure -L UnitTest
+
+  if [[ $COVERAGE == On ]]; then
+    ninja scandium_coverage
+    cp -r scandium/coverage $ARTIFACT_DIRECTORY/coverage
+  fi
+popd

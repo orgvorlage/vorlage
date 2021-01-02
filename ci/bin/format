@@ -1,0 +1,23 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+
+if [ "$#" -ne 2 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires"
+  echo "1. git-clang-format binary"
+  echo "2. clang-format binary"
+  exit 1
+fi
+
+GIT_CLANG_FORMAT=$1
+CLANG_FORMAT=$2
+
+source dev/share/clang-format/formatter.sh
+format_code $GIT_CLANG_FORMAT $CLANG_FORMAT
+RETURN_CODE=$?
+
+exit $RETURN_CODE

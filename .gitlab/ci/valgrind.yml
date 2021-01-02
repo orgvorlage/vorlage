@@ -1,0 +1,36 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+# Generic Valgrind Configuration
+.valgrind:
+  stage: Test
+  image: $DOCKER_USER/$OS_NAME:$CXX_STANDARD
+  extends: .container
+  only:
+    variables:
+      - $VORLAGE_CI_ENABLE_VALGRIND == "true"
+  script:
+    - |
+      ci/bin/valgrind \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        $PWD \
+        $WORKING_DIRECTORY
+    - |
+      if [[ $COVERAGE == On ]]; then
+        ci/bin/compute.coverage \
+          -i $WORKING_DIRECTORY/artifact/coverage/unit.t/unit.t.json \
+          -o $WORKING_DIRECTORY/artifact/coverage/unit.t/unit.t.log
+        mkdir -p artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+        rsync -aAX \
+          $WORKING_DIRECTORY/artifact/ \
+          artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+      fi
+
+.valgrind.ubuntu.20.04:
+  extends: .valgrind
+  variables:
+    OS_NAME: ubuntu.20.04

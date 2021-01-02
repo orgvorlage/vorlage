@@ -1,0 +1,28 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+.system:
+  stage: Test
+  extends: .shell
+  script:
+    - |
+      ci/bin/os \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        $PWD \
+        $WORKING_DIRECTORY
+    - |
+      if [[ $COVERAGE == On ]]; then
+        ci/bin/compute.coverage \
+          -i $WORKING_DIRECTORY/artifact/coverage/unit.t/unit.t.json \
+          -o $WORKING_DIRECTORY/artifact/coverage/unit.t/unit.t.log
+        mkdir -p artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+        rsync -aAX \
+          $WORKING_DIRECTORY/artifact/ \
+          artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+      fi
+
+

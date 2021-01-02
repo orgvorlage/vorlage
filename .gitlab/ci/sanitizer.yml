@@ -1,0 +1,40 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+# Generic Sanitizer Configuration
+.sanitizer:
+  stage: Test
+  extends: .container
+  image: $DOCKER_USER/diagnostic:$CXX_STANDARD
+  script:
+    - COMPILER_PREFIX=/opt/cupstack/$DIAGNOSTIC_COMPILER_NAME/$DIAGNOSTIC_COMPILER_VERSION
+    - TOOLCHAIN_PREFIX=/opt/depstack/
+    - TOOLCHAIN_FILE=$TOOLCHAIN_PREFIX/share/piloted/toolchain/toolchain.cmake
+    - RUNTIME_ENVIRONMENT=$COMPILER_PREFIX/share/cupstack/runtime.bash
+    - |
+      ci/bin/sanitizer \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $SANITIZER \
+        $CXX_STANDARD \
+        $PWD \
+        $WORKING_DIRECTORY
+
+# Sanitizer Configuration
+.sanitizer.address:
+  extends: .sanitizer
+  variables:
+    SANITIZER: "Address"
+
+.sanitizer.leak:
+  extends: .sanitizer
+  variables:
+    SANITIZER: "Leak"
+
+.sanitizer.undefined:
+  extends: .sanitizer
+  variables:
+    SANITIZER: "Undefined"
+

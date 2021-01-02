@@ -1,0 +1,29 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+.reporter:
+  stage: Deployment
+  extends: .container
+  when: always
+  image: $DOCKER_USER/deployment:latest
+  only:
+    variables:
+      - $CI_COMMIT_REF_PROTECTED == "true"
+  script:
+    - |
+      ci/bin/setup.ssh \
+        $REPORTER_HOST_ADDRESS \
+        $REPORTER_HOST_PORT \
+        $REPORTER_HOST_USERNAME \
+        $KEY_PASSWORD \
+        $KEY_SALT
+    - |
+      ci/bin/report.generate.from.gitlab.ci \
+        $READ_API_TOKEN \
+        $PIPELINE_API_LINK
+    - |
+      ci/bin/report.deploy \
+        $REPORTER_REPO \
+        $CI_COMMIT_REF_NAME

@@ -1,0 +1,59 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+
+if [ "$#" -ne 6 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires: "
+  echo "1. Runtime Environment"
+  echo "2. Toolchain File"
+  echo "3. Sanitizer"
+  echo "4. C++ Standard"
+  echo "5. Source Directory"
+  echo "6. Working Directory"
+  exit 1
+fi
+
+RUNTIME_ENVIRONMENT=$1
+TOOLCHAIN_FILE=$2
+SANITIZER=$3
+CXX_STANDARD=$4
+SOURCE_DIRECTORY=$5
+WORKING_DIRECTORY=$6
+
+BUILD_TYPE=Sanitizer
+BUILD_DIRECTORY=$WORKING_DIRECTORY/build
+OUTPUT_DATA=$WORKING_DIRECTORY/output_data
+LOG_DIRECTORY=$WORKING_DIRECTORY/log
+
+source  dev/etc/meta.sh
+if [[ $INPUT_DATA_TYPE == EXTERNAL ]]; then
+  INPUT_DATA=$WORKING_DIRECTORY/input_data
+else
+  INPUT_DATA=$SOURCE_DIRECTORY/test/share/data/
+fi
+
+mkdir -p $BUILD_DIRECTORY
+mkdir -p $OUTPUT_DATA
+mkdir -p $LOG_DIRECTORY
+
+source $RUNTIME_ENVIRONMENT
+pushd $BUILD_DIRECTORY
+  cmake \
+    -G Ninja \
+    -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DTOOLCHAIN_CXX_STANDARD=$CXX_STANDARD \
+    -DTOOLCHAIN_SANITIZER=$SANITIZER \
+    -DTOOLCHAIN_ENABLE_WARNINGS=On \
+    -DTOOLCHAIN_ENABLE_WERROR=On \
+    -DINPUT_DATA=$INPUT_DATA \
+    -DOUTPUT_DATA=$OUTPUT_DATA \
+    -DBUILD_TESTING=On \
+    -B$BUILD_DIRECTORY -S$SOURCE_DIRECTORY
+  cmake --build $BUILD_DIRECTORY --parallel 1
+  ctest --output-on-failure -L UnitTest
+popd

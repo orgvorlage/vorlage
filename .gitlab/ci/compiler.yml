@@ -1,0 +1,51 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+# Generic Compiler Configuration
+.compiler:
+  stage: Test
+  extends: .container
+  image: $DOCKER_USER/$COMPILER_NAME.$COMPILER_VERSION:$CXX_STANDARD
+  script:
+    - COMPILER_PREFIX=/opt/cupstack/$COMPILER_NAME/$COMPILER_VERSION
+    - TOOLCHAIN_PREFIX=/opt/depstack/
+    - TOOLCHAIN_FILE=$TOOLCHAIN_PREFIX/share/piloted/toolchain/toolchain.cmake
+    - |
+      ci/bin/compiler \
+        $TOOLCHAIN_FILE \
+        $CXX_STANDARD \
+        $BUILD_TYPE \
+        $COVERAGE \
+        $PWD \
+        $WORKING_DIRECTORY
+    - |
+      if [[ $COVERAGE == On ]]; then
+        ci/bin/compute.coverage \
+          -i $WORKING_DIRECTORY/artifact/coverage/unit.t/unit.t.json \
+          -o $WORKING_DIRECTORY/artifact/coverage/unit.t/unit.t.log
+        mkdir -p artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+        rsync -aAX \
+          $WORKING_DIRECTORY/artifact/ \
+          artifact/coverage/$COMPILER/$RELEASE/$CXX_STANDARD/
+      fi
+
+# Compiler List
+.clang.9:
+  extends: .compiler
+  variables:
+    COMPILER_NAME: clang
+    COMPILER_VERSION: 9
+
+.clang.10:
+  extends: .compiler
+  variables:
+    COMPILER_NAME: clang
+    COMPILER_VERSION: 10
+
+.clang.11:
+  extends: .compiler
+  variables:
+    COMPILER_NAME: clang
+    COMPILER_VERSION: 11

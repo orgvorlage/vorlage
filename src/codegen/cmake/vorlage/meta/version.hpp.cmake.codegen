@@ -1,0 +1,50 @@
+//------------------------------------------------------------------------------
+// SPDX-License-Identifier: "Apache-2.0 OR MIT"
+// Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+//------------------------------------------------------------------------------
+#ifndef VORLAGE_META_VERSION_HPP
+#define VORLAGE_META_VERSION_HPP
+
+#include <string_view>
+
+namespace vorlage::meta {
+class version {
+
+public:
+  [[nodiscard]] constexpr auto string_view() noexcept -> std::string_view
+  {
+    return version_string_;
+  }
+
+  [[nodiscard]] constexpr auto major() const noexcept -> std::size_t
+  {
+    return major_;
+  }
+
+  [[nodiscard]] constexpr auto minor() const noexcept -> std::size_t
+  {
+    return minor_;
+  }
+
+  [[nodiscard]] constexpr auto patch() const noexcept -> std::size_t
+  {
+    return patch_;
+  }
+
+  [[nodiscard]] constexpr auto tweak() const noexcept -> std::size_t
+  {
+    return tweak_;
+  }
+
+private:
+  // clang-format off
+  std::string_view version_string_{"@PROJECT_VERSION@"};
+  std::size_t major_{@PROJECT_VERSION_MAJOR@};
+  std::size_t minor_{@PROJECT_VERSION_MINOR@};
+  std::size_t patch_{@PROJECT_VERSION_PATCH@};
+  std::size_t tweak_{@PROJECT_VERSION_TWEAK@};
+  // clang-format on
+};
+} // namespace vorlage::meta
+
+#endif // VORLAGE_META_VERSION_HPP

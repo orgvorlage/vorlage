@@ -1,0 +1,176 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+# User Configurable Variables
+variables:
+  DIAGNOSTIC_COMPILER_NAME: clang
+  DIAGNOSTIC_COMPILER_VERSION: 11
+  DOCKER_USER: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ci
+  PIPELINE_API_LINK: $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs
+  WORKING_DIRECTORY: $RUNNER_WORKING_DIRECTORY/$CI_PROJECT_NAME/$CI_PIPELINE_ID/$CI_JOB_ID
+
+include:
+  - local: '.gitlab/ci/input_data.yml'
+  # Setup the Basic Templates
+  - local: '.gitlab/ci/container.yml'
+  - local: '.gitlab/ci/shell.yml'
+  # Setup the Test Templates
+  - local: '.gitlab/ci/analysis.yml'
+  - local: '.gitlab/ci/compiler.yml'
+  - local: '.gitlab/ci/deployment.yml'
+  - local: '.gitlab/ci/documentation.yml'
+  - local: '.gitlab/ci/format.yml'
+  - local: '.gitlab/ci/os.yml'
+  - local: '.gitlab/ci/sanitizer.yml'
+  - local: '.gitlab/ci/system.yml'
+  - local: '.gitlab/ci/valgrind.yml'
+
+# Define the Stages
+stages:
+  - Prelim
+  - Test
+  - Deployment
+
+#-------------------------------------------------------------------------------
+# Prelim (Stage: Prelim)
+#-------------------------------------------------------------------------------
+"Format":
+  extends: .format
+
+#-------------------------------------------------------------------------------
+# OS (Stage: Test)
+#-------------------------------------------------------------------------------
+"Archlinux (C++17, Debug)":
+  extends: .archlinux.latest
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+"Archlinux (C++17, Release)":
+  extends: .archlinux.latest
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Centos 8 (C++17, Debug)":
+  extends: .centos.8
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+"Centos 8 (C++17, Release)":
+  extends: .centos.8
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+"Ubuntu 20.04 (C++17, Debug)":
+  extends: .ubuntu.20.04
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+"Ubuntu 20.04 (C++17, Release)":
+  extends: .ubuntu.20.04
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "Off"
+
+#-------------------------------------------------------------------------------
+# Compilers (Stage: Test)
+#-------------------------------------------------------------------------------
+"Clang 9 (C++17, Debug)":
+  extends: .clang.9
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 9 (C++17, Release)":
+  extends: .clang.9
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "On"
+
+"Clang 10 (C++17, Debug)":
+  extends: .clang.10
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 10 (C++17, Release)":
+  extends: .clang.10
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "On"
+
+"Clang 11 (C++17, Debug)":
+  extends: .clang.11
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "On"
+
+"Clang 11 (C++17, Release)":
+  extends: .clang.11
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Release"
+    COVERAGE: "On"
+
+#-------------------------------------------------------------------------------
+# Sanitizer (Stage: Test)
+#-------------------------------------------------------------------------------
+"Address Sanitizer (C++17)":
+  extends: .sanitizer.address
+  variables:
+    CXX_STANDARD: "17"
+
+"Leak Sanitizer (C++17)":
+  extends: .sanitizer.leak
+  variables:
+    CXX_STANDARD: "17"
+
+"Undefined Sanitizer (C++17)":
+  extends: .sanitizer.undefined
+  variables:
+    CXX_STANDARD: "17"
+
+"Valgrind":
+  extends: .valgrind.ubuntu.20.04
+  variables:
+    CXX_STANDARD: "17"
+    BUILD_TYPE: "Debug"
+    COVERAGE: "Off"
+
+
+#-------------------------------------------------------------------------------
+# Static Analysis (Stage: Test)
+#-------------------------------------------------------------------------------
+"Clang Tidy (C++17)":
+  extends: .clang_tidy
+  variables:
+    CXX_STANDARD: "17"
+
+#-------------------------------------------------------------------------------
+# Documentation (Stage: Test)
+#-------------------------------------------------------------------------------
+"Doxygen":
+  extends: .doxygen
+
+#-------------------------------------------------------------------------------
+# Reporter (Stage: Deployment)
+#-------------------------------------------------------------------------------
+"CI Reporter":
+  extends: .reporter

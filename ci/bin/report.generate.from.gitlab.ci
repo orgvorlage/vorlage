@@ -1,0 +1,22 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+set -euo pipefail
+if [ "$#" -ne 2 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires :"
+  echo "1. Read API Token"
+  echo "2. Pipeline API Link"
+  exit 1
+fi
+
+READ_API_TOKEN=$1
+PIPELINE_LINK=$2
+
+mkdir -p artifact/report
+echo $PIPELINE_LINK
+curl --header "PRIVATE-TOKEN: $READ_API_TOKEN" "$PIPELINE_LINK"  > artifact/pipeline.json
+

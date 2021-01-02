@@ -1,0 +1,28 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+
+if [ "$#" -ne 0 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires 0 arguments."
+  exit 1
+fi
+
+LINT_LIST=$(cat dev/share/clang-tidy/linter.list  | paste -sd "," -)
+LINT_OPTIONS_FILE="dev/share/clang-tidy/linter.options"
+
+
+echo "---" > .clang-tidy
+echo "Checks: '$LINT_LIST'" >> .clang-tidy
+echo "WarningsAsErrors: '$LINT_LIST'" >> .clang-tidy
+echo "HeaderFilterRegex: '.*'" >> .clang-tidy
+echo "AnalyzeTemporaryDtors: false" >> .clang-tidy
+echo "FormatStyle: none" >> .clang-tidy
+cat $LINT_OPTIONS_FILE >> .clang-tidy
+echo "..." >> .clang-tidy
+
+
+

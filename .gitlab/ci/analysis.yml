@@ -1,0 +1,25 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+.clang_tidy:
+  stage: Test
+  extends: .container
+  image: $DOCKER_USER/diagnostic:$CXX_STANDARD
+  script:
+    - COMPILER_PREFIX=/opt/cupstack/$DIAGNOSTIC_COMPILER_NAME/$DIAGNOSTIC_COMPILER_VERSION
+    - TOOLCHAIN_PREFIX=/opt/depstack/
+    - TOOLCHAIN_FILE=$TOOLCHAIN_PREFIX/share/piloted/toolchain/toolchain.cmake
+    - RUNTIME_ENVIRONMENT=$COMPILER_PREFIX/share/cupstack/runtime.bash
+    - CLANG_TIDY=$COMPILER_PREFIX/bin/clang-tidy
+    - RUN_CLANG_TIDY_PY=$COMPILER_PREFIX/share/clang/run-clang-tidy.py
+    - |
+      ci/bin/clang_tidy \
+        $RUNTIME_ENVIRONMENT \
+        $TOOLCHAIN_FILE \
+        $RUN_CLANG_TIDY_PY \
+        $CLANG_TIDY \
+        $CXX_STANDARD \
+        $PWD \
+        $WORKING_DIRECTORY

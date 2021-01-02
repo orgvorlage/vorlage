@@ -1,0 +1,12 @@
+---
+Checks: '*,-android-*,-fuchsia-*,-bugprone-exception-escape,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-llvmlibc-*,-modernize-use-nodiscard,-readability-redundant-access-specifiers'
+WarningsAsErrors: '*,-android-*,-fuchsia-*,-bugprone-exception-escape,-cppcoreguidelines-pro-type-vararg,-hicpp-vararg,-llvmlibc-*,-modernize-use-nodiscard,-readability-redundant-access-specifiers'
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle: none
+CheckOptions:
+  - key:    cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value:  '1'
+  - key:    hicpp-special-member-functions.AllowSoleDefaultDtor
+    value:  '1'
+...

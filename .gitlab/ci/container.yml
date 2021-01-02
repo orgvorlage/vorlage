@@ -1,0 +1,11 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+
+.container:
+  extends: .input_data
+  tags: ["docker"]
+  artifacts:
+    paths:
+      - artifact

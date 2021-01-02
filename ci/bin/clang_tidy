@@ -1,0 +1,70 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: "Apache-2.0 OR MIT"
+# Copyright (C) 2020, Jayesh Badwaik <jayesh@badwaik.in>
+#-------------------------------------------------------------------------------
+set -euo pipefail
+if [ "$#" -ne 7 ]; then
+  echo "Script provided with $# arguments."
+  echo "Script requires:"
+  echo "1. Runtime Environment"
+  echo "2. Toolchain File"
+  echo "3. run-clang-tidy.py binary"
+  echo "4. clang-tidy binary"
+  echo "5. C++ Standard"
+  echo "6. Source Directory"
+  echo "7. Working Directory"
+  exit 1
+fi
+
+RUNTIME_ENVIRONMENT=$1
+TOOLCHAIN_FILE=$2
+RUN_CLANG_TIDY_PY=$3
+CLANG_TIDY=$4
+CXX_STANDARD=$5
+SOURCE_DIRECTORY=$6
+WORKING_DIRECTORY=$7
+
+BUILD_TYPE=Debug
+BUILD_DIRECTORY=$WORKING_DIRECTORY/build
+LOG_DIRECTORY=$WORKING_DIRECTORY/log
+OUTPUT_DATA=$WORKING_DIRECTORY/output_data
+
+source  dev/etc/meta.sh
+if [[ $INPUT_DATA_TYPE == "external" ]]; then
+  INPUT_DATA=$WORKING_DIRECTORY/input_data
+else
+  INPUT_DATA=$SOURCE_DIRECTORY/test/share/data/
+fi
+
+mkdir -p $BUILD_DIRECTORY
+mkdir -p $OUTPUT_DATA
+mkdir -p $LOG_DIRECTORY
+
+source $RUNTIME_ENVIRONMENT
+pushd $BUILD_DIRECTORY
+  cmake \
+    -G Ninja \
+    -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE \
+    -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+    -DTOOLCHAIN_CXX_STANDARD=$CXX_STANDARD \
+    -DTOOLCHAIN_ENABLE_WARNINGS=On \
+    -DTOOLCHAIN_ENABLE_WERROR=On \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+    -DINPUT_DATA=$INPUT_DATA \
+    -DOUTPUT_DATA=$OUTPUT_DATA \
+    -DBUILD_TESTING=On \
+    -B$BUILD_DIRECTORY -S$SOURCE_DIRECTORY
+  cmake --build $BUILD_DIRECTORY --parallel 1
+popd
+set +e
+
+$RUN_CLANG_TIDY_PY -quiet -j 2 \
+  -clang-tidy-binary $CLANG_TIDY \
+  -p $BUILD_DIRECTORY
+RETURN_CODE=$?
+if [[ $RETURN_CODE != 0 ]]; then
+  echo "FATAL ERROR: Clang-Tidy Check Failed. Exiting...."
+  exit 1
+fi
+set -e
